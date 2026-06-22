@@ -223,6 +223,23 @@ resume exitthis
 
 end function
 
+function getgitpath() as string
+    dim sh as object
+    dim ex as object
+    dim result as string
+
+    set sh = createobject("WScript.Shell")
+    set ex = sh.exec("cmd /c where git")
+
+    result = trim(ex.stdout.readall)
+
+    if result <> "" then
+        getgitpath = replace(split(result, vbcrlf)(0), "cmd\git.exe", "git-bash.exe")
+    else
+        getgitpath = ""
+    end if
+end function
+
 function rungitcmd(inputcmd as string, optional dir as string = "current", optional printall as boolean = true, optional printnone as boolean = false) as string
 
 dim wsshell as object

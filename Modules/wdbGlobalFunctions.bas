@@ -24,37 +24,9 @@ function tojson(byval dict as object) as string
     tojson = result
 end function
 
-
-
-public function genemail(optional byval strto as string = "", optional byval strbcc as string = "", optional byval strcc as string = "", optional byval strsubject as string = "", optional body as string = "") as boolean
-genemail = false
-    
-dim objemail as object
-
-set objemail = createobject("outlook.Application")
-set objemail = objemail.createitem(0)
-
-with objemail
-    .to = strto
-    .cc = strcc
-    .bcc = strbcc
-    .subject = strsubject
-    .htmlbody = body
-    .display
-end with
-
-set objemail = nothing
-
-genemail = true
-end function
-
 public sub openpath(path)
 createobject("Shell.Application").open cvar(path)
 end sub
-
-function emailcontentgen(subject as string, title as string, subtitle as string, primarymessage as string, detail1 as string, detail2 as string, detail3 as string) as string
-emailcontentgen = subject & "," & title & "," & subtitle & "," & primarymessage & "," & detail1 & "," & detail2 & "," & detail3
-end function
 
 function getemail(username as string) as string
 on error resume next

@@ -252,33 +252,16 @@ do while not rs.eof
     rs.movenext
 loop
 
-call genemail(strbcc:=emails, strsubject:="WorkingDB Update Released", body:=form_sfrmrepo.releasenotes)
+dim body as string
+body = generatehtml("WorkingDB Update", form_sfrmrepo.releasenotes, "", "Release: " & me.releasenum, format(date, "mmmm dd yyyy"), "Released By: " & me.responsibleperson, appname:="New Release", appid:=me.releasenum)
+
+call genemail("", emails, "WorkingDB Update Released", body)
 
 rs.close
 set rs = nothing
 set db = nothing
 
 addnote me.notifydepartment & " email generated"
-
-formstatus (false)
-end sub
-
-private sub notifyuser_afterupdate()
-formstatus (true)
-
-dim db as database
-dim rs as recordset
-
-set db = opendatabase("\\data\mdbdata\WorkingDB\_docs\Reporting\WorkingDB_ForExcel.accdb", , true)
-set rs = db.openrecordset("SELECT * FROM tblPermissions WHERE user = '" & me.notifyuser & "'")
-
-call genemail(strto:=rs!useremail, strsubject:="WorkingDB Update Released", body:=form_sfrmrepo.releasenotes)
-
-rs.close
-set rs = nothing
-set db = nothing
-
-addnote me.notifyuser & " email generated"
 
 formstatus (false)
 end sub

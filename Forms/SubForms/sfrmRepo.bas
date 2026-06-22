@@ -68,6 +68,65 @@ form__main.sfrmfiles.requery
 call formstatus(false)
 end sub
 
+private sub opengitbash_click()
+formstatus (true)
+addnote "git bash"
+
+dim wsshell as object
+dim sworkingdirectory as string
+dim stroutput as string, strerror as string
+
+' set the working directory to your git repository
+dim results as string
+results = ""
+if isnull(form_sfrmrepo.cmdrepo) then exit sub
+sworkingdirectory = form_sfrmrepo.cmdrepo
+
+set wsshell = createobject("WScript.Shell")
+wsshell.currentdirectory = sworkingdirectory
+
+' use .run with hidden window (0) and redirect stdout + stderr to temp files
+dim tmpout as string, tmperr as string
+tmpout = environ("temp") & "\git_stdout.txt"
+tmperr = environ("temp") & "\git_stderr.txt"
+
+wsshell.run "cmd /c where git > """ & tmpout & """ 2> """ & tmperr & """", 0, true
+
+' read stdout
+dim fso as object
+set fso = createobject("Scripting.FileSystemObject")
+
+stroutput = ""
+if fso.fileexists(tmpout) then
+    if fso.getfile(tmpout).size > 0 then
+        stroutput = fso.opentextfile(tmpout).readall()
+    end if
+    fso.deletefile tmpout
+end if
+
+' read stderr
+strerror = ""
+if fso.fileexists(tmperr) then
+    if fso.getfile(tmperr).size > 0 then
+        strerror = fso.opentextfile(tmperr).readall()
+    end if
+    fso.deletefile tmperr
+end if
+
+' log any errors from stderr
+if len(strerror) > 0 then
+    addnote strerror
+end if
+
+stroutput = "cmd /c start " & split(replace(stroutput, "cmd\git.exe", "git-bash.exe"), vbcrlf)(0) & " -lc ""cd '" & sworkingdirectory & "' && exec bash"""
+
+shell stroutput, vbnormalfocus
+set fso = nothing
+set wsshell = nothing
+
+formstatus (false)
+end sub
+
 private sub stagechanged_click()
 formstatus (true)
 addnote "git add ."
