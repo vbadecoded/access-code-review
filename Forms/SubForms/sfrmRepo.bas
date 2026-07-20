@@ -25,35 +25,49 @@ set fso = createobject("Scripting.FileSystemObject")
 dim arr() as string
 arr = split(results, vblf)
 
-dim item, itemstatus as string
+dim item, itemstatus as string, gitsection as string
 dim rsfiles as dao.recordset
 set rsfiles = dbstatus.openrecordset("tblFiles", dbopendynaset, dbappendonly)
 
+dim splittest as string
+
 for each item in arr
-    if instr(item, "Changes to be committed") then itemstatus = "staged"
-    if instr(item, "Changes not staged for commit") then itemstatus = "unstaged"
-    if instr(item, "Untracked files") then itemstatus = "new"
-    if instr(item, "deleted") then itemstatus = "deleted"
-    if instr(item, "modified:") then
-        rsfiles.addnew
-        rsfiles!location = trim(replace(replace(item, "modified:", ""), chr(9), ""))
-        rsfiles!filestatus = itemstatus
-        rsfiles.update
-    elseif itemstatus = "new" then
-        if fso.fileexists(form_sfrmrepo.cmdrepo & replace(item, chr(9), "")) then
-            rsfiles.addnew
-            rsfiles!location = replace(replace(item, "modified:", ""), chr(9), "")
-            rsfiles!filestatus = itemstatus
-            rsfiles.update
-        end if
-    elseif itemstatus = "deleted" then
-        if len(replace(replace(item, "deleted:", ""), chr(9), "")) > 1 then
-            rsfiles.addnew
-            rsfiles!location = replace(replace(item, "deleted:", ""), chr(9), "")
-            rsfiles!filestatus = itemstatus
-            rsfiles.update
-        end if
-    end if
+    if instr(item, "Changes to be committed:") then gitsection = "staged"
+    if instr(item, "Changes not staged for commit:") then gitsection = "unstaged"
+    if instr(item, "Untracked files:") then gitsection = "untracked"
+    
+    if instr(item, "modified:") then itemstatus = "modified"
+    if instr(item, "new file:") then itemstatus = "new"
+    if instr(item, "deleted:") then itemstatus = "deleted"
+    
+    select case itemstatus
+        case "modified"
+            if fso.fileexists(form_sfrmrepo.cmdrepo & trim(replace(replace(item, "modified:", ""), chr(9), ""))) then
+                rsfiles.addnew
+                rsfiles!location = trim(replace(replace(item, "modified:", ""), chr(9), ""))
+                rsfiles!filestatus = gitsection
+                rsfiles!fileaction = itemstatus
+                rsfiles.update
+            end if
+        case "new"
+            if fso.fileexists(form_sfrmrepo.cmdrepo & trim(replace(replace(item, "new file:", ""), chr(9), ""))) then
+                rsfiles.addnew
+                rsfiles!location = replace(replace(item, "modified:", ""), chr(9), "")
+                rsfiles!filestatus = gitsection
+                rsfiles!fileaction = itemstatus
+                rsfiles.update
+            end if
+        case "deleted"
+            if instr(item, ":") then
+                if len(replace(split(item, ":")(1), chr(9), "")) > 1 then
+                    rsfiles.addnew
+                    rsfiles!location = replace(replace(item, "deleted:", ""), chr(9), "")
+                    rsfiles!filestatus = gitsection
+                    rsfiles!fileaction = itemstatus
+                    rsfiles.update
+                end if
+            end if
+    end select
 next item
 
 rsfiles.close
